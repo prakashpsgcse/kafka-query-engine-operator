@@ -1,4 +1,4 @@
 package io.github.prakash.kafkaqueryengine.operator.api.controller;
 
-public class SearchController {
+public class QueryEngineController {
 }

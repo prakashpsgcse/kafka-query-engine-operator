@@ -1,4 +1,4 @@
 package io.github.prakash.kafkaqueryengine.operator.api.model;
 
-public class SearchEngineRequest {
+public class QueryEngineRequest {
 }
