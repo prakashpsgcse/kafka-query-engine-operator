@@ -144,7 +144,7 @@ spec:
       serviceAccountName: kafka-query-engine-operator
       containers:
         - name: operator
-          image: kafka-query-engine-operator:v5
+          image: kafka-query-engine-operator:v6
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

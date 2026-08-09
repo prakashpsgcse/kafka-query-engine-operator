@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.github.prakash.kqe.operator.kubernetes.crd.KafkaQueryEngine;
 import io.github.prakash.kqe.operator.kubernetes.crd.KafkaQueryEngineSpec;
 import io.github.prakash.kqe.operator.kubernetes.model.KubernetesLabels;
+import io.github.prakash.kqe.operator.kubernetes.model.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -109,12 +110,14 @@ public class ConfigMapServiceImpl implements ConfigMapService {
 
         log.info("Configmap generated for KQE {}",data);
 
+
+
         return new ConfigMapBuilder()
                 .withNewMetadata()
                 .withName(name + "-config")
                 .withNamespace(resource.getMetadata().getNamespace())
                 .withLabels(KubernetesLabels.forEngine(resource.getSpec().getEngineId()))
-//                .withOwnerReferences(getOwnerReference(resource))
+                .withOwnerReferences(Utils.ownerReference(resource))
                 .endMetadata()
                 .withData(data)
                 .build();

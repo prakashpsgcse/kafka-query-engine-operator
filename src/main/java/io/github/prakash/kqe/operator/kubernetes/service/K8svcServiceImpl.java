@@ -7,6 +7,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.github.prakash.kqe.operator.kubernetes.crd.KafkaQueryEngine;
 import io.github.prakash.kqe.operator.kubernetes.crd.KafkaQueryEngineSpec;
 import io.github.prakash.kqe.operator.kubernetes.model.KubernetesLabels;
+import io.github.prakash.kqe.operator.kubernetes.model.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -79,7 +80,7 @@ public class K8svcServiceImpl implements K8svcService {
                 .withName(name+ "-service")  // Changed from name + "-service" to just name
                 .withNamespace(resource.getMetadata().getNamespace())
                 .withLabels(KubernetesLabels.forEngine(resource.getSpec().getEngineId()))
-                // .withOwnerReferences(getOwnerReference(resource))
+                .withOwnerReferences(Utils.ownerReference(resource))
                 .endMetadata()
                 .withNewSpec()
                 .withSelector(KubernetesLabels.forEngine(resource.getSpec().getEngineId())) // or use getSelectorLabels(resource) if it returns the correct labels

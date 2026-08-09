@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.github.prakash.kqe.operator.kubernetes.crd.KafkaQueryEngine;
 import io.github.prakash.kqe.operator.kubernetes.crd.KafkaQueryEngineSpec;
 import io.github.prakash.kqe.operator.kubernetes.model.KubernetesLabels;
+import io.github.prakash.kqe.operator.kubernetes.model.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -108,6 +109,7 @@ public class DeploymentServiceImpl implements DeploymentService {
                 .withName(deploymentName(resource)+"-deployment")
                 .withNamespace(namespace(resource))
                 .withLabels(KubernetesLabels.forEngine(resource.getSpec().getEngineId()))
+                .withOwnerReferences(Utils.ownerReference(resource))
                 .endMetadata()
 
                 .withNewSpec()

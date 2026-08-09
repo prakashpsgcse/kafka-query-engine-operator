@@ -1,5 +1,6 @@
 package io.github.prakash.kqe.operator.kubernetes.controller;
 
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.github.prakash.kqe.operator.api.utils.QueryEngineRegistry;
 import io.github.prakash.kqe.operator.kubernetes.crd.KafkaQueryEngine;
@@ -197,18 +198,33 @@ public class KafkaQueryEngineReconciler {
         String namespace = resource.getMetadata().getNamespace();
         String engineId = resource.getSpec().getEngineId();
 
-        log.info(
-                "Waiting for KQE pod {} to terminate",
-                engineId);
+        log.info("Waiting for KQE pod {} to terminate", engineId);
 
-        kubernetesClient.pods()
-                .inNamespace(namespace)
-                .withLabels(
-                        KubernetesLabels.forEngine(engineId))
-                .waitUntilCondition(Objects::isNull, 30, TimeUnit.SECONDS);
+        // Wait up to 5 minutes
+        int maxRetries = 30;
+        int retries = 0;
 
-        log.info(
-                "KQE pod {} terminated",
-                engineId);
+        while (retries < maxRetries) {
+            List<Pod> pods = kubernetesClient.pods()
+                    .inNamespace(namespace)
+                    .withLabels(KubernetesLabels.forEngine(engineId))
+                    .list()
+                    .getItems();
+
+            if (pods.isEmpty()) {
+                log.info("KQE pod {} terminated", engineId);
+                return;
+            }
+
+            try {
+                Thread.sleep(10000); // Wait 10 seconds
+                retries++;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        log.warn("Timed out waiting for KQE pod {} to terminate", engineId);
     }
 }
