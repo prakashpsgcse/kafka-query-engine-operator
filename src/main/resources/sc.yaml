@@ -1,0 +1,37 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: kqe-nfs
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: Immediate
+reclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kqe-optr-index-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: kqe-nfs
+  mountOptions:
+    - nfsvers=4
+  nfs:
+    server: 10.96.238.15
+    path: /
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kqe-index-pvc
+  namespace: kafka
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: kqe-nfs
+  resources:
+    requests:
+      storage: 5Gi

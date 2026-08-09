@@ -1,0 +1,195 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kafka-query-engine-operator
+  namespace: kafka
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kafka-query-engine-operator
+  namespace: kafka
+rules:
+  # KafkaQueryEngine CRD
+  - apiGroups:
+      - io.github.prakash
+    resources:
+      - kafkaqueryengines
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+
+  # CRD status
+  - apiGroups:
+      - io.github.prakash
+    resources:
+      - kafkaqueryengines/status
+    verbs:
+      - get
+      - update
+      - patch
+
+  # ConfigMaps
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+
+  # Services
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  # Endpoints
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+    verbs:
+      - get
+      - list
+      - watch
+
+  # Deployments
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kafka-query-engine-operator
+  namespace: kafka
+subjects:
+  - kind: ServiceAccount
+    name: kafka-query-engine-operator
+    namespace: kafka
+roleRef:
+  kind: Role
+  name: kafka-query-engine-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-query-engine-operator-config
+  namespace: kafka
+data:
+  application.properties: |
+    server.port=8080
+    k8s.namespace=kafka
+    kqe.api.base-path=
+    kqe.api.query-path=/query
+    kqe.api.messages-path=/messages
+    kqe.api.index-status-path=/index/status
+    kqe.api.index-path=/index
+    logging.level.io.github.prakash.kqe.operator=INFO
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-query-engine-operator
+  namespace: kafka
+  labels:
+    app: kafka-query-engine-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-query-engine-operator
+  template:
+    metadata:
+      labels:
+        app: kafka-query-engine-operator
+    spec:
+      serviceAccountName: kafka-query-engine-operator
+      containers:
+        - name: operator
+          image: kafka-query-engine-operator:v5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+              value: "file:/config/"
+          volumeMounts:
+            - name: operator-config
+              mountPath: /config
+              readOnly: true
+            - name: kqe-index
+              mountPath: /index
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: operator-config
+          configMap:
+            name: kafka-query-engine-operator-config
+        - name: kqe-index
+          persistentVolumeClaim:
+            claimName: kqe-index-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-query-engine-operator
+  namespace: kafka
+  labels:
+    app: kafka-query-engine-operator
+
+spec:
+  type: LoadBalancer
+
+  selector:
+    app: kafka-query-engine-operator
+
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

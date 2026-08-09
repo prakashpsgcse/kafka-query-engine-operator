@@ -1,0 +1,64 @@
+curl --location 'localhost:8080/api/v1/query-engines' \
+--header 'Content-Type: application/json' \
+--data '{
+  "topic": "orders1",
+  "bootstrapServers": "kafka:9092",
+  "valuePayloadType": "STRING",
+  "ttl": 12000,
+  "kafkaConfig": {
+    "group.id": "orders-search",
+    "auto.offset.reset": "earliest",
+    "enable.auto.commit": "false"
+  }
+}'
+
+curl --location 'http://localhost:8080/api/v1/query-engines' \
+--header 'Content-Type: application/json'
+
+curl --location 'http://localhost:8080/api/v1/query-engines/kqe-35aa32c24469' \
+--header 'Content-Type: application/json'
+
+
+
+curl --location 'http://localhost:8081/api/v1/query-engines/query' \
+--header 'Content-Type: application/json' \
+--data '{
+  "topic": "orders1",
+  "bootstrapServers": "kafka:9092",
+  "field": "VALUE",
+  "query": "ORD-10003"
+}'
+
+curl --location 'http://localhost:8081/api/v1/query-engines/query' \
+--header 'Content-Type: application/json' \
+--data '{
+  "topic": "orders1",
+  "bootstrapServers": "kafka:9092",
+  "field": "KEY",
+  "query": "ORD-10003"
+}'
+
+curl --location 'http://localhost:8080/api/v1/query-engines/messages' \
+--header 'Content-Type: application/json' \
+--data '{
+  "topic": "orders1",
+  "bootstrapServers": "kafka:9092",
+  "partition": 0,
+  "offset": 500
+}'
+
+curl --location 'http://localhost:8081/api/v1/query-engines/index/status' \
+--header 'Content-Type: application/json' \
+--data '{
+  "topic": "orders1",
+  "bootstrapServers": "kafka:9092"
+}'
+
+
+curl --location --request DELETE 'http://localhost:8081/api/v1/query-engines/index' \
+--header 'Content-Type: application/json' \
+--data '{
+  "topic": "orders1",
+  "bootstrapServers": "kafka:9092"
+}'
+

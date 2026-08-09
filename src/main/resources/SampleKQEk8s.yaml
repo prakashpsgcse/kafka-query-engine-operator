@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kqe-config
+  namespace: kafka
+data:
+  application.properties: |
+    server.port=8080
+    kafka.topic=orders
+    spring.kafka.bootstrap-servers=kafka:9092
+    key.payload.type=STRING
+    value.payload.type=STRING
+    index.path=/tmp/index
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kqe
+  namespace: kafka
+spec:
+  selector:
+    app: kqe
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kqe
+  namespace: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kqe
+  template:
+    metadata:
+      labels:
+        app: kqe
+    spec:
+      containers:
+        - name: kqe
+          image: kqe:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+              value: file:/config/
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: index
+              mountPath: /tmp/index
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: kqe-config
+        - name: index
+          emptyDir: {}
